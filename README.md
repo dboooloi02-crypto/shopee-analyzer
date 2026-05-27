@@ -1,34 +1,69 @@
 # Shopee 选品分析工具
 
-## 使用方式
+## 🚀 快速开始（Windows 用户）
 
-### 方式一：手动录入数据（推荐，今晚就能用）
+不需要 Git，不需要配环境，跟着做就行。
 
-1. 在浏览器打开 Shopee 台湾站，搜一个类目
-2. 把感兴趣的品复制到 Excel，格式：
-   ```
-   标题,售价(TWD),批发价(CNY),月销,评分,评价数
-   ```
-3. 运行：
-   ```bash
-   cd /mnt/g/shopee-analyzer
-   python3 main.py data/template.csv
-   ```
+### 第1步：下载
 
-### 方式二：示例数据体验
-```bash
-python3 main.py
-# 会输出 15 个桌面收纳类目的示例分析
+点击页面右上角绿色「**Code**」按钮 →「**Download ZIP**」→ 解压到桌面。
+
+### 第2步：打开终端
+
+打开解压后的文件夹，在空白处**按住 Shift 键 → 右键** → 选择「**在此处打开 PowerShell**」。
+
+### 第3步：安装依赖
+
+在 PowerShell 里输入：
+
+```powershell
+pip install openpyxl requests beautifulsoup4
 ```
 
-## 输出
+### 第4步：运行示例
 
-Excel 在 `data/reports/` 目录下，带条件颜色：
+```powershell
+python main.py
+```
+
+你会看到 15 个桌面收纳类目的自动分析结果，按毛利率从高到低排序。
+
+### 第5步：用自己的数据
+
+在 `data/` 文件夹里新建一个 `我的商品.csv`，格式如下：
+
+```
+标题,售价,批发价,月销,评分,评价数
+北欧风桌面收纳盒,199,12,850,4.8,320
+透明亚克力化妆品收纳盒,299,18,1200,4.7,560
+```
+
+然后运行：
+
+```powershell
+python main.py data/我的商品.csv
+```
+
+### 第6步：看结果
+
+打开 `data/reports/` 文件夹，双击生成的 Excel 文件即可查看。
+
 - 🟢 绿色 = 推荐
 - 🔴 红色 = 不推荐
-- 🟡 黄色 = 观察
+- 🟡 黄色 = 待观察
 
-## 目录结构
+---
+
+## 📋 使用方式（Mac / Linux）
+
+```bash
+git clone https://github.com/dboooloi02-crypto/shopee-analyzer.git
+cd shopee-analyzer
+pip install openpyxl requests beautifulsoup4
+python3 main.py
+```
+
+## 📁 目录结构
 
 ```
 shopee-analyzer/
@@ -37,19 +72,17 @@ shopee-analyzer/
 ├── config.py            # 配置
 ├── exporter.py          # 导出工具
 ├── data/
-│   ├── template.csv     # 录入模板
+│   ├── reports/         # Excel 输出
 │   ├── raw/             # 原始数据
 │   ├── parsed/          # 处理后数据
-│   ├── cache/           # 缓存
-│   └── reports/         # Excel 输出
+│   └── cache/           # 缓存
 ```
 
-## 待办（后续更新计划）
+## 📌 后续更新
 
-- [ ] Shopee 自动爬虫（反爬解决后）
-- [ ] 评论 NLP 分析（提炼用户痛点）
-- [ ] 利润率自动计算（接入 1688 API）
-- [ ] 多页爬取 & 批量商品对比
-- [ ] Web 版界面（拖拽上传 CSV）
+- [ ] Shopee 自动爬虫
+- [ ] 评论 NLP 分析
+- [ ] 自动比价
+- [ ] Web 版界面
 
-仓库会持续更新，欢迎 Star ⭐ 关注。
+仓库持续更新，欢迎 Star ⭐
