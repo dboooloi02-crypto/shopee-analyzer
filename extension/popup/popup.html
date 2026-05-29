@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Shopee Scout</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <h2>Shopee Scout</h2>
+      <span id="urlDisplay" class="url-hint">\u672a\u68c0\u6d4b\u5230 Shopee \u9875\u9762</span>
+    </div>
+    <div class="actions">
+      <button id="extractBtn" disabled class="btn-primary">\u63d0\u53d6\u5f53\u524d\u9875\u5546\u54c1</button>
+    </div>
+    <div id="status" class="status">\u7b49\u5f85\u64cd\u4f5c...</div>
+    <div id="debugInfo" class="debug-box" style="display:none;"></div>
+    <div id="resultArea" style="display:none;">
+      <div class="summary">
+        <span id="count">0</span> \u4ef6\u5546\u54c1
+        <span id="sourceBadge" class="badge" style="display:none;"></span>
+        <button id="exportBtn" class="btn-small">\u5bfc\u51fa CSV</button>
+      </div>
+      <div id="tableWrap">
+        <table id="productTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>\u5546\u54c1\u540d</th>
+              <th>\u4ef7\u683c</th>
+              <th>\u9500\u91cf</th>
+              <th>\u8bc4\u5206</th>
+              <th>\u5730\u5740</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

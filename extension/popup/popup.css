@@ -1,0 +1,118 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 420px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  background: #ffffff;
+  color: #1d1d1f;
+  font-size: 13px;
+}
+.app { padding: 16px; }
+.header { margin-bottom: 14px; }
+.header h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 4px;
+}
+.url-hint {
+  font-size: 11px;
+  color: #8e8e93;
+  word-break: break-all;
+}
+.actions { margin-bottom: 12px; }
+.btn-primary {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  background: #2f80ed;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover:not(:disabled) { background: #1a6ed8; }
+.btn-primary:disabled { background: #c7d9f5; cursor: not-allowed; }
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: #2f80ed;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+.btn-small:hover { background: #1a6ed8; }
+.status {
+  font-size: 12px;
+  color: #8e8e93;
+  padding: 6px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #f2f2f7;
+}
+.debug-box {
+  font-size: 10px;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+  color: #333;
+  background: #f5f5f7;
+  padding: 8px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.4;
+}
+.summary {
+  font-size: 13px;
+  color: #1d1d1f;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+.summary #count { font-weight: 600; font-size: 18px; margin-right: 4px; }
+#tableWrap {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #f2f2f7;
+  border-radius: 8px;
+}
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+thead th {
+  background: #f9f9fb;
+  color: #8e8e93;
+  font-weight: 500;
+  text-align: left;
+  padding: 8px 6px;
+  border-bottom: 1px solid #e5e5ea;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+tbody td {
+  padding: 6px;
+  border-bottom: 1px solid #f2f2f7;
+  color: #1d1d1f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+tbody tr:last-child td { border-bottom: none; }
+.badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+.badge-api { background: #e8f5e9; color: #2e7d32; }
+.badge-dom { background: #fff3e0; color: #e65100; }
+.name-cell { max-width: 160px; }
+.price-cell { max-width: 55px; text-align: right; }
+.sold-cell { max-width: 40px; text-align: right; }
+.rating-cell { max-width: 35px; text-align: center; }
+.shop-cell { max-width: 70px; }
