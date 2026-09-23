@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shopee 選品後台看板</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --green:#1D9E75;--green-d:#0F6E56;--green-l:#EAF3DE;
+  --amber:#EF9F27;--amber-l:#FAEEDA;
+  --red:#E24B4A;--red-l:#FCEBEB;
+  --bg:#F5F4F0;--surface:#fff;
+  --border:rgba(0,0,0,.08);
+  --text:#1a1a1a;--sub:#666;--muted:#999;
+  --radius:10px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:.5px solid var(--border);
+  padding:1.25rem 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{padding:1.5rem;overflow-x:hidden}
+
+/* Sidebar */
+.brand{padding:0 1.25rem 1.25rem;border-bottom:.5px solid var(--border);margin-bottom:.75rem}
+.brand h1{font-size:15px;font-weight:600}
+.brand p{font-size:11px;color:var(--sub);margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 1.25rem;
+  font-size:13px;cursor:pointer;color:var(--sub);border-radius:0;
+  border-left:2px solid transparent;transition:all .15s}
+.nav-item:hover{color:var(--text);background:var(--bg)}
+.nav-item.active{color:var(--green);border-left-color:var(--green);
+  background:var(--green-l);font-weight:500}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.sidebar-section{font-size:10px;font-weight:500;color:var(--muted);
+  letter-spacing:.08em;text-transform:uppercase;padding:8px 1.25rem 4px;margin-top:.5rem}
+
+/* Page */
+.page{display:none}.page.active{display:block}
+.page-title{font-size:20px;font-weight:600;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--sub);margin-bottom:1.25rem}
+
+/* Cards */
+.card{background:var(--surface);border-radius:var(--radius-lg);
+  border:.5px solid var(--border);padding:1.25rem;box-shadow:var(--shadow)}
+.card-title{font-size:13px;font-weight:500;color:var(--sub);margin-bottom:.75rem}
+
+/* Stat grid */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1rem}
+.stat-card{background:var(--surface);border-radius:var(--radius-lg);
+  border:.5px solid var(--border);padding:1rem 1.25rem;box-shadow:var(--shadow)}
+.stat-val{font-size:28px;font-weight:600;line-height:1}
+.stat-label{font-size:12px;color:var(--sub);margin-top:4px}
+.stat-change{font-size:11px;margin-top:6px}
+.stat-change.up{color:var(--green)}.stat-change.down{color:var(--red)}
+
+/* Chart grid */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
+.chart-wrap{position:relative;height:220px}
+
+/* Collect form */
+.collect-form{display:flex;gap:8px;margin-bottom:1rem;align-items:flex-end}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;color:var(--sub)}
+.form-group input,.form-group select{
+  padding:8px 10px;border:.5px solid var(--border);border-radius:8px;
+  font-size:13px;outline:none;background:#fff;color:var(--text)}
+.form-group input:focus,.form-group select:focus{border-color:var(--green)}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;
+  cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:hover{background:var(--green-d)}
+.btn-primary:disabled{background:#ccc;cursor:not-allowed}
+.btn-ghost{background:none;border:.5px solid var(--border);color:var(--sub)}
+.btn-ghost:hover{border-color:var(--green);color:var(--green)}
+.btn-danger{background:none;border:.5px solid var(--red);color:var(--red);font-size:12px;padding:4px 8px}
+.btn-danger:hover{background:var(--red);color:#fff}
+
+/* Progress */
+.progress-box{display:none;padding:12px;border-radius:var(--radius);
+  background:var(--green-l);border:.5px solid #9FE1CB;margin-bottom:1rem}
+.progress-bar-wrap{height:4px;background:#c8eede;border-radius:2px;margin-top:8px}
+.progress-bar{height:4px;background:var(--green);border-radius:2px;transition:width .3s}
+.progress-text{font-size:12px;color:#3B6D11}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:500;
+   color:var(--muted);text-transform:uppercase;letter-spacing:.05em;
+   border-bottom:.5px solid var(--border);background:var(--bg)}
+td{padding:10px 12px;border-bottom:.5px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg)}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;
+  font-size:11px;font-weight:500}
+.badge-great{background:var(--green-l);color:#3B6D11}
+.badge-ok{background:#E1F5EE;color:var(--green-d)}
+.badge-warn{background:var(--amber-l);color:#854F0B}
+.badge-fail{background:var(--red-l);color:#A32D2D}
+.badge-done{background:var(--green-l);color:#3B6D11}
+.badge-running{background:var(--amber-l);color:#854F0B}
+.badge-failed{background:var(--red-l);color:#A32D2D}
+.badge-pending{background:var(--bg);color:var(--sub);border:.5px solid var(--border)}
+
+/* Score bar inline */
+.score-inline{display:flex;align-items:center;gap:6px}
+.score-bar-sm{width:60px;height:4px;background:#eee;border-radius:2px;overflow:hidden}
+.score-fill-sm{height:4px;border-radius:2px}
+
+/* Product img */
+.prod-img{width:36px;height:36px;border-radius:6px;object-fit:cover;
+  border:.5px solid var(--border);background:var(--bg)}
+
+/* Toolbar */
+.toolbar{display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap}
+.toolbar input{padding:7px 10px;border:.5px solid var(--border);border-radius:8px;
+  font-size:13px;outline:none;width:220px}
+.toolbar input:focus{border-color:var(--green)}
+.toolbar select{padding:7px 8px;border:.5px solid var(--border);border-radius:8px;
+  font-size:12px;outline:none;background:#fff}
+.ml-auto{margin-left:auto}
+
+/* Alert */
+.alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:.75rem}
+.alert-info{background:#EEF6FF;color:#1D4ED8;border:.5px solid #BFDBFE}
+.alert-success{background:var(--green-l);color:#3B6D11;border:.5px solid #9FE1CB}
+
+/* Toggle */
+.toggle{position:relative;width:36px;height:20px;display:inline-block}
+.toggle input{display:none}
+.toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;
+  left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--green)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(16px)}
+
+/* Tabs */
+.sub-tabs{display:flex;gap:2px;border-bottom:.5px solid var(--border);margin-bottom:1rem}
+.sub-tab{padding:7px 14px;font-size:13px;cursor:pointer;border:none;background:none;
+  color:var(--sub);border-bottom:2px solid transparent;margin-bottom:-.5px;transition:all .15s}
+.sub-tab.active{color:var(--green);border-bottom-color:var(--green);font-weight:500}
+
+/* Empty */
+.empty{text-align:center;padding:3rem 1rem;color:var(--muted)}
+.empty-icon{font-size:32px;opacity:.4;margin-bottom:.5rem}
+
+/* Responsive */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .chart-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="brand">
+    <h1>🛍 選品後台</h1>
+    <p>Shopee 台灣居家類目</p>
+  </div>
+  <div class="sidebar-section">數據</div>
+  <div class="nav-item active" onclick="nav('dashboard')">
+    <span class="nav-icon">📊</span> 數據看板
+  </div>
+  <div class="nav-item" onclick="nav('products')">
+    <span class="nav-icon">📦</span> 商品數據庫
+  </div>
+  <div class="nav-item" onclick="nav('favorites')">
+    <span class="nav-icon">⭐</span> 潛力品收藏
+  </div>
+  <div class="sidebar-section">採集</div>
+  <div class="nav-item" onclick="nav('collect')">
+    <span class="nav-icon">🔍</span> 手動採集
+  </div>
+  <div class="nav-item" onclick="nav('jobs')">
+    <span class="nav-icon">📋</span> 採集紀錄
+  </div>
+  <div class="nav-item" onclick="nav('schedule')">
+    <span class="nav-icon">⏰</span> 定時採集
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+<!-- ── 數據看板 ── -->
+<div class="page active" id="page-dashboard">
+  <div class="page-title">數據看板</div>
+  <div class="page-sub">所有採集數據的整體概覽</div>
+
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card"><div class="stat-val" id="s-total">—</div><div class="stat-label">總商品數</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-jobs">—</div><div class="stat-label">採集次數</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-favs">—</div><div class="stat-label">已收藏潛力品</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-recommend">—</div><div class="stat-label">強烈推薦商品</div></div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="card">
+      <div class="card-title">評級分佈</div>
+      <div class="chart-wrap"><canvas id="chart-verdict"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">評分區間</div>
+      <div class="chart-wrap"><canvas id="chart-score"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">每日採集量（近14天）</div>
+      <div class="chart-wrap"><canvas id="chart-daily"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">熱門關鍵字（採集量）</div>
+      <div class="chart-wrap"><canvas id="chart-keywords"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 商品數據庫 ── -->
+<div class="page" id="page-products">
+  <div class="page-title">商品數據庫</div>
+  <div class="page-sub">所有採集到的商品，支援篩選與搜索</div>
+  <div class="toolbar">
+    <input type="text" id="prod-search" placeholder="搜索商品名稱..." oninput="filterProducts()">
+    <select id="prod-verdict" onchange="filterProducts()">
+      <option value="">全部評級</option>
+      <option value="強烈推薦">強烈推薦</option>
+      <option value="可以測款">可以測款</option>
+      <option value="謹慎考慮">謹慎考慮</option>
+      <option value="直接放棄">直接放棄</option>
+    </select>
+    <select id="prod-score" onchange="filterProducts()">
+      <option value="0">最低分數：不限</option>
+      <option value="60">60分以上</option>
+      <option value="70">70分以上</option>
+      <option value="80">80分以上</option>
+    </select>
+    <span class="ml-auto" style="font-size:12px;color:var(--muted)" id="prod-count"></span>
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇ 匯出 CSV</button>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>商品</th><th>售價</th><th>銷量</th><th>評分</th>
+          <th>選品分</th><th>評級</th><th>操作</th>
+        </tr></thead>
+        <tbody id="prod-tbody"><tr><td colspan="7" class="empty"><div class="empty-icon">📭</div><div>載入中...</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── 潛力品收藏 ── -->
+<div class="page" id="page-favorites">
+  <div class="page-title">潛力品收藏</div>
+  <div class="page-sub">你標記的高潛力商品</div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>商品</th><th>售價</th><th>銷量</th><th>評分</th><th>評級</th><th>操作</th>
+        </tr></thead>
+        <tbody id="fav-tbody"><tr><td colspan="6"><div class="empty"><div class="empty-icon">⭐</div><div>載入中...</div></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── 手動採集 ── -->
+<div class="page" id="page-collect">
+  <div class="page-title">手動採集</div>
+  <div class="page-sub">輸入關鍵字，後端自動開啟無頭瀏覽器採集 Shopee</div>
+
+  <div class="alert alert-info" style="margin-bottom:1rem">
+    💡 後端採集使用 Playwright Chromium，<strong>首次需執行</strong>：<code>playwright install chromium</code>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title">啟動新採集任務</div>
+    <div class="collect-form">
+      <div class="form-group" style="flex:1">
+        <label>搜索關鍵字</label>
+        <input type="text" id="kw-input" placeholder="例：收納盒、理線夾、免打孔掛鉤" value="收納盒">
+      </div>
+      <div class="form-group">
+        <label>採集數量</label>
+        <select id="kw-max">
+          <option value="30">30件</option>
+          <option value="60" selected>60件</option>
+          <option value="100">100件</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="btn-start" onclick="startCollect()">▶ 開始採集</button>
+    </div>
+    <div class="progress-box" id="progress-box">
+      <div class="progress-text" id="progress-text">採集中...</div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    📌 也可從 <strong>Chrome 擴充</strong> 採集後點擊「同步到後端」按鈕，數據直接存入資料庫，不需要 Playwright。
+  </div>
+</div>
+
+<!-- ── 採集紀錄 ── -->
+<div class="page" id="page-jobs">
+  <div class="page-title">採集紀錄</div>
+  <div class="page-sub">所有採集任務的執行紀錄</div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>關鍵字</th><th>狀態</th><th>商品數</th><th>採集時間</th><th>操作</th></tr></thead>
+        <tbody id="jobs-tbody"><tr><td colspan="6"><div class="empty">載入中...</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── 定時採集 ── -->
+<div class="page" id="page-schedule">
+  <div class="page-title">定時採集</div>
+  <div class="page-sub">設定自動採集任務（Cron 表達式）</div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title">新增定時任務</div>
+    <div class="collect-form" style="flex-wrap:wrap;gap:8px">
+      <div class="form-group" style="flex:1;min-width:160px">
+        <label>關鍵字</label>
+        <input type="text" id="sch-kw" placeholder="例：收納盒">
+      </div>
+      <div class="form-group" style="flex:1;min-width:160px">
+        <label>執行頻率</label>
+        <select id="sch-preset" onchange="applyPreset()">
+          <option value="0 9 * * *">每天早上 09:00</option>
+          <option value="0 9 * * 1">每週一 09:00</option>
+          <option value="0 9 1 * *">每月1號 09:00</option>
+          <option value="custom">自訂 Cron</option>
+        </select>
+      </div>
+      <div class="form-group" id="sch-custom-wrap" style="display:none;flex:1;min-width:160px">
+        <label>Cron 表達式</label>
+        <input type="text" id="sch-cron" placeholder="分 時 日 月 週">
+      </div>
+      <button class="btn btn-primary" onclick="addSchedule()" style="align-self:flex-end">+ 新增任務</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>關鍵字</th><th>執行頻率</th><th>上次執行</th><th>下次執行</th><th>啟用</th><th>操作</th></tr></thead>
+        <tbody id="sch-tbody"><tr><td colspan="6"><div class="empty">載入中...</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const API = 'http://localhost:8000/api';
+let allProds = [];
+let charts = {};
+
+// ── Navigation ────────────────────────────────────────────────────
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelector(`.nav-item[onclick="nav('${page}')"]`).classList.add('active');
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'products')  loadProducts();
+  if (page === 'favorites') loadFavorites();
+  if (page === 'jobs')      loadJobs();
+  if (page === 'schedule')  loadSchedules();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────
+async function loadDashboard() {
+  const r = await fetch(`${API}/stats`).then(r => r.json()).catch(() => null);
+  if (!r) return;
+
+  document.getElementById('s-total').textContent     = r.total_products.toLocaleString();
+  document.getElementById('s-jobs').textContent      = r.total_jobs.toLocaleString();
+  document.getElementById('s-favs').textContent      = r.total_favorites.toLocaleString();
+  document.getElementById('s-recommend').textContent = (r.verdicts?.['強烈推薦'] || 0).toLocaleString();
+
+  renderChart('chart-verdict', 'doughnut',
+    ['強烈推薦','可以測款','謹慎考慮','直接放棄'],
+    [r.verdicts?.['強烈推薦']||0, r.verdicts?.['可以測款']||0,
+     r.verdicts?.['謹慎考慮']||0, r.verdicts?.['直接放棄']||0],
+    ['#1D9E75','#5DCAA5','#EF9F27','#E24B4A']);
+
+  const sd = r.score_distribution || {};
+  renderChart('chart-score', 'bar',
+    ['80+分','70-79分','60-69分','<60分'],
+    [sd.s80||0, sd.s70||0, sd.s60||0, sd.s50||0],
+    ['#1D9E75','#5DCAA5','#EF9F27','#E24B4A']);
+
+  const daily = (r.daily_collect || []).reverse();
+  renderChart('chart-daily', 'line',
+    daily.map(d => d.d), daily.map(d => d.cnt), ['#1D9E75']);
+
+  const kw = r.top_keywords || [];
+  renderChart('chart-keywords', 'bar',
+    kw.map(k => k.keyword), kw.map(k => k.cnt), ['#5DCAA5']);
+}
+
+function renderChart(id, type, labels, data, colors) {
+  const ctx = document.getElementById(id).getContext('2d');
+  if (charts[id]) charts[id].destroy();
+  const isMultiColor = colors.length > 1 && type === 'doughnut';
+  charts[id] = new Chart(ctx, {
+    type,
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: isMultiColor ? colors : colors[0],
+        borderColor: type === 'line' ? colors[0] : 'transparent',
+        borderWidth: type === 'line' ? 2 : 0,
+        fill: type === 'line',
+        tension: 0.3,
+        pointRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: type === 'doughnut', position: 'right',
+        labels: { font: { size: 11 }, padding: 10 } } },
+      scales: type !== 'doughnut' ? {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } }
+      } : {}
+    }
+  });
+}
+
+// ── Products ──────────────────────────────────────────────────────
+async function loadProducts() {
+  const r = await fetch(`${API}/products?limit=200`).then(r => r.json()).catch(() => null);
+  allProds = r?.products || [];
+  filterProducts();
+}
+
+function filterProducts() {
+  const kw  = document.getElementById('prod-search').value.toLowerCase();
+  const vd  = document.getElementById('prod-verdict').value;
+  const sc  = parseInt(document.getElementById('prod-score').value) || 0;
+  const filtered = allProds.filter(p =>
+    (!kw || p.name.toLowerCase().includes(kw)) &&
+    (!vd || p.verdict === vd) &&
+    p.score >= sc
+  );
+  document.getElementById('prod-count').textContent = `共 ${filtered.length} 件`;
+  const tbody = document.getElementById('prod-tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🔍</div><div>無符合結果</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(p => `
+    <tr>
+      <td style="max-width:200px">
+        <div style="display:flex;gap:8px;align-items:center">
+          ${p.image ? `<img class="prod-img" src="${p.image}" onerror="this.style.display='none'">` : ''}
+          <div style="overflow:hidden">
+            <div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px" title="${esc(p.name)}">${esc(p.name)}</div>
+            <div style="font-size:10px;color:var(--muted)">#${p.id}</div>
+          </div>
+        </div>
+      </td>
+      <td>NT$${p.price||'—'}</td>
+      <td>${fmtSales(p.sales)}</td>
+      <td>${p.rating ? '⭐ '+p.rating : '—'}</td>
+      <td>
+        <div class="score-inline">
+          <strong style="color:${scoreColor(p.score)}">${p.score}</strong>
+          <div class="score-bar-sm"><div class="score-fill-sm" style="width:${p.score}%;background:${scoreColor(p.score)}"></div></div>
+        </div>
+      </td>
+      <td><span class="badge ${verdictClass(p.verdict)}">${p.verdict}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="addFav(${p.id})">⭐ 收藏</button>
+          ${p.href ? `<a href="${p.href}" target="_blank"><button class="btn btn-ghost" style="font-size:11px;padding:3px 8px">🔗</button></a>` : ''}
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function addFav(id) {
+  await fetch(`${API}/favorites/${id}`, {method:'POST'});
+  alert('✅ 已加入收藏');
+}
+
+// ── Favorites ─────────────────────────────────────────────────────
+async function loadFavorites() {
+  const r = await fetch(`${API}/favorites`).then(r => r.json()).catch(() => null);
+  const favs = r?.favorites || [];
+  const tbody = document.getElementById('fav-tbody');
+  if (!favs.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">⭐</div><div>尚無收藏</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = favs.map(f => `
+    <tr>
+      <td style="max-width:200px">
+        <div style="display:flex;gap:8px;align-items:center">
+          ${f.image ? `<img class="prod-img" src="${f.image}" onerror="this.style.display='none'">` : ''}
+          <div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${esc(f.name)}">${esc(f.name)}</div>
+        </div>
+      </td>
+      <td>NT$${f.price||'—'}</td>
+      <td>${fmtSales(f.sales)}</td>
+      <td>${f.rating ? '⭐ '+f.rating : '—'}</td>
+      <td><span class="badge ${verdictClass(f.verdict)}">${f.verdict}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          ${f.href ? `<a href="${f.href}" target="_blank"><button class="btn btn-ghost" style="font-size:11px;padding:3px 8px">🔗 查看</button></a>` : ''}
+          <button class="btn btn-danger" onclick="delFav(${f.id},this)">✕</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function delFav(id, btn) {
+  btn.disabled = true;
+  await fetch(`${API}/favorites/${id}`, {method:'DELETE'});
+  loadFavorites();
+}
+
+// ── Collect ───────────────────────────────────────────────────────
+async function startCollect() {
+  const kw  = document.getElementById('kw-input').value.trim();
+  const max = parseInt(document.getElementById('kw-max').value);
+  if (!kw) { alert('請輸入關鍵字'); return; }
+
+  const btn = document.getElementById('btn-start');
+  btn.disabled = true;
+  btn.textContent = '採集中...';
+  document.getElementById('progress-box').style.display = 'block';
+
+  const r = await fetch(`${API}/collect/start`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({keyword: kw, max_products: max})
+  }).then(r => r.json()).catch(() => null);
+
+  if (!r) { btn.disabled = false; btn.textContent = '▶ 開始採集'; return; }
+
+  // SSE 進度
+  const es = new EventSource(`${API}/collect/progress/${r.job_id}`);
+  es.onmessage = e => {
+    const d = JSON.parse(e.data);
+    const pct = d.total > 0 ? Math.round((d.done / d.total) * 100) : 0;
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-text').textContent =
+      d.status === 'done'   ? `✅ 採集完成！共 ${d.done} 件商品` :
+      d.status === 'failed' ? `❌ 採集失敗` :
+      `採集中... ${d.done} / ${d.total} 件`;
+    if (d.status === 'done' || d.status === 'failed') {
+      es.close();
+      btn.disabled = false; btn.textContent = '▶ 開始採集';
+    }
+  };
+}
+
+// ── Jobs ──────────────────────────────────────────────────────────
+async function loadJobs() {
+  const r = await fetch(`${API}/jobs`).then(r => r.json()).catch(() => null);
+  const jobs = r?.jobs || [];
+  const tbody = document.getElementById('jobs-tbody');
+  if (!jobs.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty">尚無採集紀錄</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = jobs.map(j => `
+    <tr>
+      <td style="color:var(--muted)">#${j.id}</td>
+      <td><strong>${esc(j.keyword)}</strong></td>
+      <td><span class="badge badge-${j.status}">${j.status}</span></td>
+      <td>${j.total || '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${fmtTime(j.created_at)}</td>
+      <td>
+        <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px"
+          onclick="viewJobProducts(${j.id}, '${esc(j.keyword)}')">查看商品</button>
+      </td>
+    </tr>`).join('');
+}
+
+function viewJobProducts(jobId, kw) {
+  nav('products');
+  setTimeout(() => {
+    document.getElementById('prod-search').value = kw;
+    filterProducts();
+  }, 100);
+}
+
+// ── Schedules ─────────────────────────────────────────────────────
+function applyPreset() {
+  const v = document.getElementById('sch-preset').value;
+  document.getElementById('sch-custom-wrap').style.display = v === 'custom' ? 'block' : 'none';
+}
+
+async function addSchedule() {
+  const kw = document.getElementById('sch-kw').value.trim();
+  const preset = document.getElementById('sch-preset').value;
+  const cron = preset === 'custom' ? document.getElementById('sch-cron').value.trim() : preset;
+  if (!kw || !cron) { alert('請填寫關鍵字和執行頻率'); return; }
+
+  await fetch(`${API}/schedules`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({keyword: kw, cron_expr: cron})
+  });
+  document.getElementById('sch-kw').value = '';
+  loadSchedules();
+}
+
+async function loadSchedules() {
+  const r = await fetch(`${API}/schedules`).then(r => r.json()).catch(() => null);
+  const schs = r?.schedules || [];
+  const tbody = document.getElementById('sch-tbody');
+  if (!schs.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty">尚無定時任務</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = schs.map(s => `
+    <tr>
+      <td><strong>${esc(s.keyword)}</strong></td>
+      <td style="font-size:12px;font-family:monospace">${s.cron_expr}</td>
+      <td style="font-size:12px;color:var(--muted)">${s.last_run ? fmtTime(s.last_run) : '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${s.next_run ? fmtTime(s.next_run) : '—'}</td>
+      <td>
+        <label class="toggle">
+          <input type="checkbox" ${s.enabled ? 'checked' : ''}
+            onchange="toggleSch(${s.id}, this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td>
+        <button class="btn btn-danger" onclick="delSch(${s.id})">✕ 刪除</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function toggleSch(id, enabled) {
+  await fetch(`${API}/schedules/${id}/toggle?enabled=${enabled}`, {method:'PATCH'});
+}
+
+async function delSch(id) {
+  if (!confirm('確定刪除此定時任務？')) return;
+  await fetch(`${API}/schedules/${id}`, {method:'DELETE'});
+  loadSchedules();
+}
+
+// ── CSV Export ────────────────────────────────────────────────────
+function exportCSV() {
+  const kw  = document.getElementById('prod-search').value.toLowerCase();
+  const vd  = document.getElementById('prod-verdict').value;
+  const sc  = parseInt(document.getElementById('prod-score').value) || 0;
+  const data = allProds.filter(p =>
+    (!kw || p.name.toLowerCase().includes(kw)) &&
+    (!vd || p.verdict === vd) && p.score >= sc);
+
+  const headers = ['ID','商品名稱','售價(NT$)','銷量','評分','選品分','評級','連結'];
+  const rows = data.map(p => [p.id, `"${p.name.replace(/"/g,'""')}"`,
+    p.price||0, p.sales||0, p.rating||0, p.score, p.verdict, p.href||'']);
+  const csv = '\uFEFF' + [headers,...rows].map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `shopee選品_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function verdictClass(v) {
+  return {强烈推薦:'badge-great',可以測款:'badge-ok',謹慎考慮:'badge-warn',直接放棄:'badge-fail'}[v]||'badge-warn';
+}
+function scoreColor(s) {
+  return s>=80?'#1D9E75':s>=70?'#5DCAA5':s>=60?'#EF9F27':'#E24B4A';
+}
+function fmtSales(n) {
+  if(!n)return'—';
+  if(n>=10000)return(n/10000).toFixed(1)+'萬';
+  if(n>=1000)return(n/1000).toFixed(1)+'k';
+  return n;
+}
+function fmtTime(ts) {
+  if(!ts)return'—';
+  return new Date(ts*1000).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// ── Init ──────────────────────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# SQLite 運行時數據庫（首次啟動自動建立）
+*.db
+*.db-wal
+*.db-shm
+
+# 授權數據
+license.json
+install_id

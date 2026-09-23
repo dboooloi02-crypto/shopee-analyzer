@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "Shopee 選品採集工具",
+  "version": "1.2.0",
+  "description": "在 Shopee 搜索頁採集競品數據，支援全球 8 個市場，自動套用選品打分模型",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "scripting",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://shopee.tw/*",
+    "https://shopee.sg/*",
+    "https://shopee.com.my/*",
+    "https://shopee.co.id/*",
+    "https://shopee.co.th/*",
+    "https://shopee.ph/*",
+    "https://shopee.vn/*",
+    "https://shopee.com.br/*",
+    "http://localhost:8000/*",
+    "http://localhost:8002/*"
+  ],
+  "externally_connectable": {
+    "matches": ["http://localhost:8002/*"]
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16":  "icons/icon16.png",
+      "48":  "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://shopee.tw/*",
+        "https://shopee.sg/*",
+        "https://shopee.com.my/*",
+        "https://shopee.co.id/*",
+        "https://shopee.co.th/*",
+        "https://shopee.ph/*",
+        "https://shopee.vn/*",
+        "https://shopee.com.br/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://localhost:8002/*"],
+      "js": ["relay.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

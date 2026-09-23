@@ -1,0 +1,6 @@
+# 部署脚本必须是 LF，否则在 Linux / macOS 上无法直接执行
+*.sh text eol=lf
+
+# 二进制资源
+*.png binary
+*.db binary

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shopee 選品採集工具</title>
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-light: #EAF3DE;
+    --green-dark: #0F6E56;
+    --amber: #EF9F27;
+    --amber-light: #FAEEDA;
+    --red: #E24B4A;
+    --red-light: #FCEBEB;
+    --gray-50: #F7F6F2;
+    --gray-100: #EDECEA;
+    --gray-200: #D3D1C7;
+    --gray-600: #5F5E5A;
+    --gray-800: #2C2C2A;
+    --text: #1a1a1a;
+    --text-sub: #666;
+    --border: rgba(0,0,0,0.1);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: #fff;
+    width: 420px;
+    min-height: 200px;
+    max-height: 620px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  .header {
+    padding: 14px 16px 10px;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .logo {
+    width: 32px; height: 32px;
+    background: var(--green);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .header-text h1 { font-size: 14px; font-weight: 600; }
+  .header-text p { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+  .header-actions { margin-left: auto; display: flex; gap: 6px; }
+  .btn-icon {
+    width: 28px; height: 28px;
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    background: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: background .15s;
+  }
+  .btn-icon:hover { background: var(--gray-50); }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    border-bottom: 0.5px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tab {
+    flex: 1; padding: 8px 4px;
+    font-size: 12px; text-align: center;
+    border: none; background: none; cursor: pointer;
+    color: var(--text-sub);
+    border-bottom: 2px solid transparent;
+    transition: all .15s;
+  }
+  .tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 500; }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* Panels */
+  .panel { display: none; flex: 1; overflow-y: auto; }
+  .panel.active { display: flex; flex-direction: column; }
+
+  /* Collect Panel */
+  .collect-body { padding: 14px 16px; flex: 1; }
+  .status-box {
+    padding: 12px;
+    border-radius: var(--radius-lg);
+    background: var(--gray-50);
+    border: 0.5px solid var(--border);
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gray-200); flex-shrink: 0;
+  }
+  .status-dot.ready { background: var(--green); }
+  .status-dot.error { background: var(--red); }
+  .status-dot.pulse {
+    background: var(--amber);
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .status-text { font-size: 12px; color: var(--text-sub); }
+  .status-text strong { color: var(--text); }
+
+  .btn-collect {
+    width: 100%;
+    padding: 10px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-collect:hover { background: var(--green-dark); }
+  .btn-collect:disabled { background: var(--gray-200); cursor: not-allowed; }
+
+  .tip {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: var(--green-light);
+    border-radius: var(--radius);
+    font-size: 11px; color: #3B6D11;
+    line-height: 1.6;
+  }
+
+  /* Results Panel */
+  .results-header {
+    padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 0.5px solid var(--border);
+    flex-shrink: 0;
+  }
+  .results-meta { font-size: 12px; color: var(--text-sub); }
+  .results-meta strong { color: var(--text); }
+  .btn-export {
+    padding: 5px 10px;
+    background: none; border: 0.5px solid var(--green);
+    color: var(--green); border-radius: 6px;
+    font-size: 11px; cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-export:hover { background: var(--green); color: #fff; }
+  .btn-export:disabled { border-color: var(--gray-200); color: var(--gray-200); cursor: not-allowed; }
+  .btn-sync {
+    background: var(--green);
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .btn-sync:hover { background: var(--green-dark); }
+  .btn-sync:disabled { background: var(--gray-200); cursor: not-allowed; }
+
+  .filter-bar {
+    padding: 8px 16px;
+    display: flex; gap: 6px; align-items: center;
+    border-bottom: 0.5px solid var(--border);
+    flex-shrink: 0;
+  }
+  .filter-bar input {
+    flex: 1; padding: 5px 8px;
+    border: 0.5px solid var(--border);
+    border-radius: 6px; font-size: 12px; outline: none;
+  }
+  .filter-bar input:focus { border-color: var(--green); }
+  .filter-select {
+    padding: 5px 6px;
+    border: 0.5px solid var(--border);
+    border-radius: 6px; font-size: 11px; outline: none;
+    background: #fff; cursor: pointer;
+  }
+
+  .product-list { padding: 8px 16px; flex: 1; overflow-y: auto; }
+  .product-card {
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--border);
+    cursor: pointer;
+    transition: opacity .1s;
+  }
+  .product-card:last-child { border-bottom: none; }
+  .product-card:hover { opacity: .85; }
+  .card-row1 { display: flex; gap: 8px; align-items: flex-start; }
+  .product-img {
+    width: 40px; height: 40px;
+    border-radius: 6px; object-fit: cover;
+    border: 0.5px solid var(--border);
+    flex-shrink: 0;
+    background: var(--gray-100);
+  }
+  .product-info { flex: 1; min-width: 0; }
+  .product-name {
+    font-size: 12px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .product-stats {
+    display: flex; gap: 8px; margin-top: 3px; flex-wrap: wrap;
+  }
+  .stat { font-size: 11px; color: var(--text-sub); }
+  .stat span { color: var(--text); font-weight: 500; }
+  .card-row2 { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+  .score-badge {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .score-num {
+    font-size: 16px; font-weight: 700;
+  }
+  .score-label { font-size: 10px; color: var(--text-sub); }
+  .verdict-tag {
+    font-size: 10px; font-weight: 500; padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .v-great  { background: var(--green-light); color: #3B6D11; }
+  .v-ok     { background: #E1F5EE; color: #0F6E56; }
+  .v-warn   { background: var(--amber-light); color: #854F0B; }
+  .v-fail   { background: var(--red-light); color: #A32D2D; }
+  .score-bar-wrap { flex: 1; margin: 0 10px; height: 3px; background: var(--gray-100); border-radius: 2px; }
+  .score-bar { height: 3px; border-radius: 2px; transition: width .3s; }
+  .notes-list { margin-top: 5px; display: none; }
+  .product-card.expanded .notes-list { display: block; }
+  .note-item {
+    font-size: 10px; color: var(--text-sub);
+    padding: 1px 0; display: flex; gap: 4px;
+  }
+  .note-item:before { content: "·"; color: var(--green); }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 2rem; color: var(--text-sub); text-align: center;
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; opacity: .4; }
+  .empty-text { font-size: 12px; line-height: 1.6; }
+
+  /* Saved Panel */
+  .saved-body { padding: 12px 16px; flex: 1; overflow-y: auto; }
+  .saved-header-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .saved-count { font-size: 12px; color: var(--text-sub); }
+  .btn-clear {
+    font-size: 11px; color: var(--red); background: none;
+    border: 0.5px solid var(--red); border-radius: 6px;
+    padding: 3px 8px; cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-clear:hover { background: var(--red); color: #fff; }
+
+  .scrollbar::-webkit-scrollbar { width: 4px; }
+  .scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🛍</div>
+  <div class="header-text">
+    <h1>選品採集工具</h1>
+    <p>Shopee 台灣居家類目 · 競品數據分析</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn-icon" id="btn-refresh" title="重新採集">↻</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="collect">採集</button>
+  <button class="tab" data-tab="results">結果 <span id="results-count-tab"></span></button>
+  <button class="tab" data-tab="saved">已存 <span id="saved-count-tab"></span></button>
+</div>
+
+<!-- 採集 Panel -->
+<div class="panel active scrollbar" id="panel-collect">
+  <div class="collect-body">
+    <div class="status-box">
+      <div class="status-dot" id="status-dot"></div>
+      <div class="status-text" id="status-text">請先前往 Shopee 台灣搜索頁</div>
+    </div>
+    <button class="btn-collect" id="btn-collect" disabled>
+      <span>📦</span> 開始採集本頁商品
+    </button>
+    <div class="tip">
+      💡 使用方式：<br>
+      1. 前往 shopee.tw 並搜索目標品類（如「收納盒」）<br>
+      2. 等待頁面商品載入完畢<br>
+      3. 點擊上方按鈕採集，結果自動打分<br>
+      4. 在「結果」頁查看評分，點擊星星可收藏潛力品
+    </div>
+  </div>
+</div>
+
+<!-- 結果 Panel -->
+<div class="panel scrollbar" id="panel-results">
+  <div class="results-header">
+    <div class="results-meta">共採集 <strong id="total-count">0</strong> 件商品</div>
+    <button class="btn-export" id="btn-export" disabled>⬇ 匯出 CSV</button>
+    <button class="btn-sync" id="btn-sync" disabled style="margin-left:6px">☁ 同步到後端</button>
+  </div>
+  <div class="filter-bar">
+    <input type="text" placeholder="搜索商品名稱..." id="filter-input">
+    <select class="filter-select" id="filter-verdict">
+      <option value="">全部</option>
+      <option value="強烈推薦">強烈推薦</option>
+      <option value="可以測款">可以測款</option>
+      <option value="謹慎考慮">謹慎考慮</option>
+      <option value="直接放棄">直接放棄</option>
+    </select>
+  </div>
+  <div class="product-list scrollbar" id="product-list">
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <div class="empty-text">尚無採集數據<br>請先到採集頁面執行採集</div>
+    </div>
+  </div>
+</div>
+
+<!-- 已存 Panel -->
+<div class="panel scrollbar" id="panel-saved">
+  <div class="saved-body">
+    <div class="saved-header-row">
+      <div class="saved-count" id="saved-count-text">已存 0 件潛力品</div>
+      <button class="btn-clear" id="btn-clear-saved">清空</button>
+    </div>
+    <div id="saved-list">
+      <div class="empty-state">
+        <div class="empty-icon">⭐</div>
+        <div class="empty-text">尚無收藏<br>在結果頁點擊 ☆ 星星收藏潛力品</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
